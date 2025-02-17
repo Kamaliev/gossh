@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ type alias = string
 type UserSSH struct {
 	Address  string `json:"address"`
 	Username string `json:"username"`
-	Port     int    `json:"port"`
+	Port     string `json:"port"`
 }
 
 var configFilePath = filepath.Join(os.Getenv("HOME"), ".gossh.json")
@@ -59,7 +59,7 @@ func GetServer(name string) (UserSSH, error) {
 	return server, nil
 }
 
-func AddServer(name, address, username string, port int) error {
+func AddServer(name, address, username string, port string) error {
 	storage, err := LoadConfig()
 	if err != nil {
 		return err
