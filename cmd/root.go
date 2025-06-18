@@ -106,14 +106,42 @@ func serverAdd(serverName string) {
 	username, _ := ReadCmdLine("[write_username]: ", nil)
 	port, _ := ReadCmdLine("[write_port]: ", &portValidator)
 	userSsh := UserSSH{address, username, port}
+
+	// Загружаем конфиг и сохраняем данные нового сервера
 	config, _ := LoadConfig()
 	config[serverName] = userSsh
 	err := SaveConfig(config)
 	if err != nil {
 		fmt.Println("error saving config:", err)
+		return
 	}
+
+	// Выводим подтверждение
 	fmt.Printf("Сервер \"%s\" успешно добавлен\n", serverName)
 
+	// Формируем адрес подключения
+	fullAddress := fmt.Sprintf("%s@%s", username, address)
+
+	// Если порт отличный от стандартного (22), добавим его в команду
+	var sshCopyCmd *exec.Cmd
+	if port != "22" {
+		sshCopyCmd = exec.Command("ssh-copy-id", "-p", port, fullAddress)
+	} else {
+		sshCopyCmd = exec.Command("ssh-copy-id", fullAddress)
+	}
+
+	// Подключаем ввод/вывод к системной команде, чтобы пользователь мог ввести пароль
+	sshCopyCmd.Stdin = os.Stdin
+	sshCopyCmd.Stdout = os.Stdout
+	sshCopyCmd.Stderr = os.Stderr
+	// Запускаем ssh-copy-id
+	fmt.Println("Попытка передачи SSH-ключа на сервер с помощью ssh-copy-id...")
+	err = sshCopyCmd.Run()
+	if err != nil {
+		fmt.Println("Ошибка при выполнении ssh-copy-id:", err)
+	} else {
+		fmt.Println("SSH-ключ успешно передан на удалённый сервер.")
+	}
 }
 
 func serverConnect(serverName string) {
